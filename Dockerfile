@@ -305,14 +305,14 @@ RUN \
     && echo "${ARG_HEADLESS_USER_NAME:-headless}:x:1001:0:Default:${HOME}:/bin/bash" >> /etc/passwd \
     && adduser "${ARG_HEADLESS_USER_NAME:-headless}" sudo \
     && echo "${ARG_HEADLESS_USER_NAME:-headless}:${ARG_SUDO_PW:-${VNC_PW}}" | chpasswd \
-	&& adduser student \
+	&& adduser -u 1000 student \
     && echo "student:tn3duts" | chpasswd \
     && ${ARG_FEATURES_USER_GROUP_OVERRIDE/*/chmod a+w /etc/passwd /etc/group} \
     && ln -s "${HOME}"/readme.md "${HOME}"/Desktop/README \
     && chmod 755 -R "${STARTUPDIR}" \
     && "${STARTUPDIR}"/set_user_permissions.sh "${STARTUPDIR}" "${HOME}"
 
-USER student
+USER 1000
 
 ENTRYPOINT [ "/usr/bin/tini", "--", "/dockerstartup/startup.sh" ]
 # ENTRYPOINT [ "/usr/bin/tini", "--", "tail", "-f", "/dev/null" ]
