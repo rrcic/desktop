@@ -305,7 +305,7 @@ RUN \
     && echo "${ARG_HEADLESS_USER_NAME:-headless}:x:1001:0:Default:${HOME}:/bin/bash" >> /etc/passwd \
     && adduser "${ARG_HEADLESS_USER_NAME:-headless}" sudo \
     && echo "${ARG_HEADLESS_USER_NAME:-headless}:${ARG_SUDO_PW:-${VNC_PW}}" | chpasswd \
-	&& adduser -u 1000 student \
+	&& adduser -u 1000 student --disabled-passwd \
     && echo "student:tn3duts" | chpasswd \
     && ${ARG_FEATURES_USER_GROUP_OVERRIDE/*/chmod a+w /etc/passwd /etc/group} \
     && ln -s "${HOME}"/readme.md "${HOME}"/Desktop/README \
