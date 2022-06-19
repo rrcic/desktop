@@ -323,7 +323,7 @@ RUN \
 	&& adduser student sudo \
 	### 添加用户tom
 	&& useradd -u 1001 -g 1001 -d /home/tom -m -s /bin/bash tom \
-	&& echo "student:tom" | chpasswd \
+	&& echo "tom:tom" | chpasswd \
 	
 ENTRYPOINT [ "/usr/bin/tini", "--", "/dockerstartup/startup.sh" ]
 # ENTRYPOINT [ "/usr/bin/tini", "--", "tail", "-f", "/dev/null" ]
