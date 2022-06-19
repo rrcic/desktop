@@ -60,12 +60,12 @@ main() {
     ### option "--debug"
     if [ "${_arg_debug}" == "on" ] ; then
         echo "Script: $0"
-        echo "\${HOME}=${HOME}"
+        echo "\${HEADLESS_HOME}=${HEADLESS_HOME}"
 
         echo "ls -la /" ; ls -la /
         echo "ls -ls /etc/passwd /etc/group" ; ls -ls /etc/passwd /etc/group
         echo "ls -la /home" ; ls -la /home
-        echo "ls -la ${HOME}" ; ls -la "${HOME}"
+        echo "ls -la ${HEADLESS_HOME}" ; ls -la "${HEADLESS_HOME}"
         echo "ls -la ." ; ls -la .
     fi
 

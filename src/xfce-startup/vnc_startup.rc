@@ -1,7 +1,7 @@
 declare _tmp
 declare _vnc_override_file
 
-_vnc_override_file="${HOME}"/.vnc_override.rc
+_vnc_override_file="${HEADLESS_HOME}"/.vnc_override.rc
 
 ### if the vnc-override file exists, then import and source
 ### only the lines beginning with 'export ' (at position 1)
@@ -40,8 +40,8 @@ start_vnc () {
         cleanup "ERROR: Not all required environment variables are set: DISPLAY, VNC_PORT, VNC_COL_DEPTH, VNC_RESOLUTION"
     fi
 
-    passwd_path="${HOME}"/.vnc/passwd
-    if [ ! -d "${HOME}"/.vnc ] ; then mkdir "${HOME}"/.vnc ; fi
+    passwd_path="${HEADLESS_HOME}"/.vnc/passwd
+    if [ ! -d "${HEADLESS_HOME}"/.vnc ] ; then mkdir "${HEADLESS_HOME}"/.vnc ; fi
 
     if [ "${VNC_VIEW_ONLY,,}" == "true" ]; then
         if [ -n "${_verbose}" ] ; then echo "Starting VNC server in view-only mode ..." ; fi
@@ -57,7 +57,7 @@ start_vnc () {
     rfbport=${VNC_PORT}
     depth=${VNC_COL_DEPTH}
     geometry=${VNC_RESOLUTION}
-    " > "${HOME}"/.vnc/config
+    " > "${HEADLESS_HOME}"/.vnc/config
 
     ### get container IP address
     vnc_ip=$(hostname -i)

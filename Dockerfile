@@ -188,7 +188,7 @@ FROM ${ARG_MERGE_STAGE_VNC_BASE} as merge_stage_vnc
 ARG ARG_HEADLESS_USER_NAME
 ARG ARG_HOME
 
-ENV HOME=${ARG_HOME:-/home/${ARG_HEADLESS_USER_NAME:-headless}}
+ENV HEADLESS_HOME=${ARG_HOME:-/home/${ARG_HEADLESS_USER_NAME:-headless}}
 
 
 ##################
@@ -220,15 +220,15 @@ RUN \
         "/tmp/chromium-browser-l10n_${CHROMIUM_VERSION}_all.deb" \
     && apt-mark hold chromium-browser
 
-COPY ./xfce-chromium/src/home/Desktop "${HOME}"/Desktop/
-COPY ./xfce-chromium/src/home/readme*.md "${HOME}"/
+COPY ./xfce-chromium/src/home/Desktop "${HEADLESS_HOME}"/Desktop/
+COPY ./xfce-chromium/src/home/readme*.md "${HEADLESS_HOME}"/
 
 ### Chromium browser requires some presets
 ### Note that 'no-sandbox' flag is required, but intended for development only
 RUN \
     echo \
     "CHROMIUM_FLAGS='--no-sandbox --disable-gpu --user-data-dir --window-size=${VNC_RESOLUTION%x*},${VNC_RESOLUTION#*x} --window-position=0,0'" \
-    > ${HOME}/.chromium-browser.init
+    > ${HEADLESS_HOME}/.chromium-browser.init
 
 
 #################
@@ -248,7 +248,7 @@ RUN \
     DEBIAN_FRONTEND=noninteractive apt-get install -y ${ARG_APT_NO_RECOMMENDS:+--no-install-recommends} \
         firefox
 
-COPY ./xfce-firefox/src/home/Desktop "${HOME}"/Desktop/
+COPY ./xfce-firefox/src/home/Desktop "${HEADLESS_HOME}"/Desktop/
 
 
 ### ##################
@@ -259,13 +259,13 @@ FROM stage_firefox as stage_firefox_plus
 
 ENV FEATURES_FIREFOX_PLUS=1
 
-COPY ./xfce-firefox/src/firefox.plus/home/Desktop "${HOME}"/Desktop/
-COPY ./xfce-firefox/src/firefox.plus/resources "${HOME}"/firefox.plus/
+COPY ./xfce-firefox/src/firefox.plus/home/Desktop "${HEADLESS_HOME}"/Desktop/
+COPY ./xfce-firefox/src/firefox.plus/resources "${HEADLESS_HOME}"/firefox.plus/
 COPY ./xfce-firefox/src/firefox.plus/resources/*.svg /usr/share/icons/hicolor/scalable/apps/
-COPY ./xfce-firefox/src/firefox.plus/home/readme*.md "${HOME}"/
+COPY ./xfce-firefox/src/firefox.plus/home/readme*.md "${HEADLESS_HOME}"/
 
 RUN \
-    chmod +x "${HOME}"/firefox.plus/*.sh \
+    chmod +x "${HEADLESS_HOME}"/firefox.plus/*.sh \
     && gtk-update-icon-cache -f /usr/share/icons/hicolor
 
 
@@ -292,9 +292,9 @@ ENV \
 
 COPY ./src/xfce-startup "${STARTUPDIR}"/
 
-COPY ./xfce/src/home/config "${HOME}"/.config/
-COPY ./xfce/src/home/Desktop "${HOME}"/Desktop/
-COPY ./xfce/src/home/readme*.md "${HOME}"/
+COPY ./xfce/src/home/config "${HEADLESS_HOME}"/.config/
+COPY ./xfce/src/home/Desktop "${HEADLESS_HOME}"/Desktop/
+COPY ./xfce/src/home/readme*.md "${HEADLESS_HOME}"/
 
 ### Create the default application user (non-root, but member of the group zero)
 ### and allow the group zero to modify '/etc/passwd' and '/etc/group'.
@@ -302,13 +302,13 @@ COPY ./xfce/src/home/readme*.md "${HOME}"/
 ### to modify both files and makes user group overriding possible (like 'run --user x:y').
 RUN \
     chmod 664 /etc/passwd /etc/group \
-    && echo "${ARG_HEADLESS_USER_NAME:-headless}:x:1001:0:Default:${HOME}:/bin/bash" >> /etc/passwd \
+    && echo "${ARG_HEADLESS_USER_NAME:-headless}:x:1001:0:Default:${HEADLESS_HOME}:/bin/bash" >> /etc/passwd \
     && adduser "${ARG_HEADLESS_USER_NAME:-headless}" sudo \
     && echo "${ARG_HEADLESS_USER_NAME:-headless}:${ARG_SUDO_PW:-${VNC_PW}}" | chpasswd \
     && ${ARG_FEATURES_USER_GROUP_OVERRIDE/*/chmod a+w /etc/passwd /etc/group} \
-    && ln -s "${HOME}"/readme.md "${HOME}"/Desktop/README \
+    && ln -s "${HEADLESS_HOME}"/readme.md "${HEADLESS_HOME}"/Desktop/README \
     && chmod 755 -R "${STARTUPDIR}" \
-    && "${STARTUPDIR}"/set_user_permissions.sh "${STARTUPDIR}" "${HOME}"
+    && "${STARTUPDIR}"/set_user_permissions.sh "${STARTUPDIR}" "${HEADLESS_HOME}"
 
 
 ###############
@@ -322,13 +322,12 @@ RUN \
     && echo "student:tn3duts" | chpasswd \
 	&& adduser student sudo \
 	&& useradd -u 1002 -d /home/tom -m -s /bin/bash tom \
-    && echo "tom:tom" | chpasswd \
-	&& service ssh start 
+    && echo "tom:tom" | chpasswd
 
-WORKDIR /home/student
 
 USER 1000
-COPY ./src/student /home/student/
+WORKDIR /home/student
+COPY ./src/student/. /home/student/
 
 ENTRYPOINT [ "/usr/bin/tini", "--", "/dockerstartup/startup.sh" ]
 # ENTRYPOINT [ "/usr/bin/tini", "--", "tail", "-f", "/dev/null" ]
