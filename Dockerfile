@@ -185,9 +185,8 @@ EXPOSE ${NOVNC_PORT}
 ###################
 
 FROM ${ARG_MERGE_STAGE_VNC_BASE} as merge_stage_vnc
-ARG ARG_HEADLESS_USER_NAME
 
-ENV HEADLESS_HOME=${/${ARG_HEADLESS_USER_NAME:-headless}}
+ENV HEADLESS_HOME=/headless
 
 
 ##################
