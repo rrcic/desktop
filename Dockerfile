@@ -315,7 +315,7 @@ RUN \
     && echo "student:tn3duts" | chpasswd \
 	&& adduser student sudo \
 	### 添加用户tom
-	&& useradd -u 1001 -g 1001 -d /home/tom -m -s /bin/bash tom \
+	&& useradd -u 1002 -g 1002 -d /home/tom -m -s /bin/bash tom \
 	&& echo "tom:tom" | chpasswd
 
 USER 1000
