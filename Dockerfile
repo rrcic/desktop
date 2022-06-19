@@ -309,7 +309,7 @@ RUN \
 	&& useradd -u 1000 -g 0 -d /home/student -m -s /bin/bash student \
     && echo "student:tn3duts" | chpasswd \
 	&& adduser student sudo \
-	&& useradd -u 1002 -g 0 -d /home/tom -m -s /bin/bash tom \
+	&& useradd -u 1002 -d /home/tom -m -s /bin/bash tom \
     && echo "tom:tom" | chpasswd \
     && ${ARG_FEATURES_USER_GROUP_OVERRIDE/*/chmod a+w /etc/passwd /etc/group} \
     && ln -s "${HOME}"/readme.md "${HOME}"/Desktop/README \
