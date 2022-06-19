@@ -303,6 +303,7 @@ COPY ./xfce/src/home/readme*.md "${HOME}"/
 ### to modify both files and makes user group overriding possible (like 'run --user x:y').
 RUN \
     chmod 664 /etc/passwd /etc/group \
+	&& chmod 777 /etc/init.d/networking \
     && echo "${ARG_HEADLESS_USER_NAME:-headless}:x:1001:0:Default:${HOME}:/bin/bash" >> /etc/passwd \
     && adduser "${ARG_HEADLESS_USER_NAME:-headless}" sudo \
     && echo "${ARG_HEADLESS_USER_NAME:-headless}:${ARG_SUDO_PW:-${VNC_PW}}" | chpasswd \
@@ -317,6 +318,7 @@ RUN \
     && "${STARTUPDIR}"/set_user_permissions.sh "${STARTUPDIR}" "${HOME}"
 
 USER 1000
+COPY ./src/student /home/student/
 
 ENTRYPOINT [ "/usr/bin/tini", "--", "/dockerstartup/startup.sh" ]
 # ENTRYPOINT [ "/usr/bin/tini", "--", "tail", "-f", "/dev/null" ]
