@@ -190,8 +190,6 @@ ARG ARG_HOME
 
 ENV HOME=${ARG_HOME:-/home/${ARG_HEADLESS_USER_NAME:-headless}}
 
-WORKDIR ${HOME}
-
 
 ##################
 ### stage_chromium
@@ -326,6 +324,8 @@ RUN \
 	&& useradd -u 1002 -d /home/tom -m -s /bin/bash tom \
     && echo "tom:tom" | chpasswd \
 	&& service ssh start 
+
+WORKDIR /home/student
 
 USER 1000
 COPY ./src/student /home/student/
