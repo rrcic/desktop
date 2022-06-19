@@ -186,9 +186,8 @@ EXPOSE ${NOVNC_PORT}
 
 FROM ${ARG_MERGE_STAGE_VNC_BASE} as merge_stage_vnc
 ARG ARG_HEADLESS_USER_NAME
-ARG ARG_HOME
 
-ENV HEADLESS_HOME=${ARG_HOME:-/home/${ARG_HEADLESS_USER_NAME:-headless}}
+ENV HEADLESS_HOME=${/${ARG_HEADLESS_USER_NAME:-headless}}
 
 
 ##################
@@ -326,8 +325,7 @@ RUN \
 
 
 USER 1000
-WORKDIR /home/student
-COPY ./src/student/. /home/student/
+COPY --chown=1000 ./src/student /home/student/
 
 ENTRYPOINT [ "/usr/bin/tini", "--", "/dockerstartup/startup.sh" ]
 # ENTRYPOINT [ "/usr/bin/tini", "--", "tail", "-f", "/dev/null" ]
