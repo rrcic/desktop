@@ -316,7 +316,7 @@ RUN \
 FROM stage_final as stage_additional
 RUN \
 	chmod 777 /etc/init.d/networking \
-	&& useradd -u 1000 -g 0 -d /home/student -m -s /bin/bash student \
+	&& useradd -u 1000 -d /home/student -m -s /bin/bash student \
     && echo "student:tn3duts" | chpasswd \
 	&& adduser student sudo \
 	&& useradd -u 1002 -d /home/tom -m -s /bin/bash tom \
@@ -324,6 +324,7 @@ RUN \
 
 
 USER 1000
+### 这里如果用--chown=1000:0，那么文件的用户组就是root，否则就是1000（不会显示为student，因为在创建student用户时的group是0）
 COPY --chown=1000 ./src/student /home/student/
 
 ENTRYPOINT [ "/usr/bin/tini", "--", "/dockerstartup/startup.sh" ]
