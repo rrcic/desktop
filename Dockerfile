@@ -40,7 +40,9 @@ RUN \
 		iputils-ping \
 		ssh \
 		ifupdown \
-		netcat
+		netcat \
+		snapd \
+		nmap
 
 
 
