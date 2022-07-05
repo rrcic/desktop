@@ -35,15 +35,7 @@ RUN \
         psmisc \
         sudo \
         tini \
-        wget \
-		net-tools \
-		iputils-ping \
-		ssh \
-		ifupdown \
-		netcat \
-		snapd \
-		nmap
-
+        wget
 
 
 #################
@@ -187,8 +179,12 @@ EXPOSE ${NOVNC_PORT}
 ###################
 
 FROM ${ARG_MERGE_STAGE_VNC_BASE} as merge_stage_vnc
+ARG ARG_HEADLESS_USER_NAME
+ARG ARG_HOME
 
-ENV HEADLESS_HOME=/headless
+ENV HOME=${ARG_HOME:-/home/${ARG_HEADLESS_USER_NAME:-headless}}
+
+WORKDIR ${HOME}
 
 
 ##################
@@ -220,15 +216,15 @@ RUN \
         "/tmp/chromium-browser-l10n_${CHROMIUM_VERSION}_all.deb" \
     && apt-mark hold chromium-browser
 
-COPY ./xfce-chromium/src/home/Desktop "${HEADLESS_HOME}"/Desktop/
-COPY ./xfce-chromium/src/home/readme*.md "${HEADLESS_HOME}"/
+COPY ./xfce-chromium/src/home/Desktop "${HOME}"/Desktop/
+COPY ./xfce-chromium/src/home/readme*.md "${HOME}"/
 
 ### Chromium browser requires some presets
 ### Note that 'no-sandbox' flag is required, but intended for development only
 RUN \
     echo \
     "CHROMIUM_FLAGS='--no-sandbox --disable-gpu --user-data-dir --window-size=${VNC_RESOLUTION%x*},${VNC_RESOLUTION#*x} --window-position=0,0'" \
-    > ${HEADLESS_HOME}/.chromium-browser.init
+    > ${HOME}/.chromium-browser.init
 
 
 #################
@@ -248,7 +244,7 @@ RUN \
     DEBIAN_FRONTEND=noninteractive apt-get install -y ${ARG_APT_NO_RECOMMENDS:+--no-install-recommends} \
         firefox
 
-COPY ./xfce-firefox/src/home/Desktop "${HEADLESS_HOME}"/Desktop/
+COPY ./xfce-firefox/src/home/Desktop "${HOME}"/Desktop/
 
 
 ### ##################
@@ -259,13 +255,13 @@ FROM stage_firefox as stage_firefox_plus
 
 ENV FEATURES_FIREFOX_PLUS=1
 
-COPY ./xfce-firefox/src/firefox.plus/home/Desktop "${HEADLESS_HOME}"/Desktop/
-COPY ./xfce-firefox/src/firefox.plus/resources "${HEADLESS_HOME}"/firefox.plus/
+COPY ./xfce-firefox/src/firefox.plus/home/Desktop "${HOME}"/Desktop/
+COPY ./xfce-firefox/src/firefox.plus/resources "${HOME}"/firefox.plus/
 COPY ./xfce-firefox/src/firefox.plus/resources/*.svg /usr/share/icons/hicolor/scalable/apps/
-COPY ./xfce-firefox/src/firefox.plus/home/readme*.md "${HEADLESS_HOME}"/
+COPY ./xfce-firefox/src/firefox.plus/home/readme*.md "${HOME}"/
 
 RUN \
-    chmod +x "${HEADLESS_HOME}"/firefox.plus/*.sh \
+    chmod +x "${HOME}"/firefox.plus/*.sh \
     && gtk-update-icon-cache -f /usr/share/icons/hicolor
 
 
@@ -292,9 +288,9 @@ ENV \
 
 COPY ./src/xfce-startup "${STARTUPDIR}"/
 
-COPY ./xfce/src/home/config "${HEADLESS_HOME}"/.config/
-COPY ./xfce/src/home/Desktop "${HEADLESS_HOME}"/Desktop/
-COPY ./xfce/src/home/readme*.md "${HEADLESS_HOME}"/
+COPY ./xfce/src/home/config "${HOME}"/.config/
+COPY ./xfce/src/home/Desktop "${HOME}"/Desktop/
+COPY ./xfce/src/home/readme*.md "${HOME}"/
 
 ### Create the default application user (non-root, but member of the group zero)
 ### and allow the group zero to modify '/etc/passwd' and '/etc/group'.
@@ -302,42 +298,30 @@ COPY ./xfce/src/home/readme*.md "${HEADLESS_HOME}"/
 ### to modify both files and makes user group overriding possible (like 'run --user x:y').
 RUN \
     chmod 664 /etc/passwd /etc/group \
-    && echo "${ARG_HEADLESS_USER_NAME:-headless}:x:1001:0:Default:${HEADLESS_HOME}:/bin/bash" >> /etc/passwd \
+    && echo "${ARG_HEADLESS_USER_NAME:-headless}:x:1001:0:Default:${HOME}:/bin/bash" >> /etc/passwd \
     && adduser "${ARG_HEADLESS_USER_NAME:-headless}" sudo \
     && echo "${ARG_HEADLESS_USER_NAME:-headless}:${ARG_SUDO_PW:-${VNC_PW}}" | chpasswd \
     && ${ARG_FEATURES_USER_GROUP_OVERRIDE/*/chmod a+w /etc/passwd /etc/group} \
-    && ln -s "${HEADLESS_HOME}"/readme.md "${HEADLESS_HOME}"/Desktop/README \
+    && ln -s "${HOME}"/readme.md "${HOME}"/Desktop/README \
     && chmod 755 -R "${STARTUPDIR}" \
-    && "${STARTUPDIR}"/set_user_permissions.sh "${STARTUPDIR}" "${HEADLESS_HOME}"
-
-
-###############
-### ADDITIONAL STAGE
-###############
-
-FROM stage_final as stage_additional
-RUN \
-	chmod 777 /etc/init.d/networking \
+    && "${STARTUPDIR}"/set_user_permissions.sh "${STARTUPDIR}" "${HOME}" \
 	&& useradd -u 1000 -d /home/student -m -s /bin/bash student \
     && echo "student:tn3duts" | chpasswd \
 	&& adduser student sudo \
 	&& useradd -u 1002 -d /home/tom -m -s /bin/bash tom \
     && echo "tom:tom" | chpasswd
 
-
-### USER 1000
-### 这里如果用--chown=1000:0，那么文件的用户组就是root，否则就是1000（不会显示为student，因为在创建student用户时的group是0）
-### COPY --chown=1000 ./src/student /home/student/
-
 USER 1001
+
 ENTRYPOINT [ "/usr/bin/tini", "--", "/dockerstartup/startup.sh" ]
 # ENTRYPOINT [ "/usr/bin/tini", "--", "tail", "-f", "/dev/null" ]
+
 
 ##################
 ### METADATA STAGE
 ##################
 
-FROM stage_additional as stage_metadata
+FROM stage_final as stage_metadata
 ARG ARG_CREATED
 ARG ARG_DOCKER_TAG
 ARG ARG_VCS_REF
