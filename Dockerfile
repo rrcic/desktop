@@ -327,8 +327,9 @@ RUN \
 
 ### USER 1000
 ### 这里如果用--chown=1000:0，那么文件的用户组就是root，否则就是1000（不会显示为student，因为在创建student用户时的group是0）
-COPY --chown=1000 ./src/student /home/student/
+### COPY --chown=1000 ./src/student /home/student/
 
+USER 1001
 ENTRYPOINT [ "/usr/bin/tini", "--", "/dockerstartup/startup.sh" ]
 # ENTRYPOINT [ "/usr/bin/tini", "--", "tail", "-f", "/dev/null" ]
 
