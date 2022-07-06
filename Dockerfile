@@ -210,36 +210,11 @@ RUN \
 COPY ./xfce-firefox/src/home/Desktop "${HOME}"/Desktop/
 
 
-### ##################
-### stage_firefox_plus
-### ##################
-
-FROM stage_firefox as stage_firefox_plus
-
-ENV FEATURES_FIREFOX_PLUS=1
-
-COPY ./xfce-firefox/src/firefox.plus/home/Desktop "${HOME}"/Desktop/
-COPY ./xfce-firefox/src/firefox.plus/resources "${HOME}"/firefox.plus/
-COPY ./xfce-firefox/src/firefox.plus/resources/*.svg /usr/share/icons/hicolor/scalable/apps/
-COPY ./xfce-firefox/src/firefox.plus/home/readme*.md "${HOME}"/
-
-RUN \
-    chmod +x "${HOME}"/firefox.plus/*.sh \
-    && gtk-update-icon-cache -f /usr/share/icons/hicolor
-
-
-#######################
-### merge_stage_browser
-#######################
-
-FROM stage_firefox as merge_stage_browser
-
-
 ###############
 ### FINAL STAGE
 ###############
 
-FROM merge_stage_browser as stage_final
+FROM stage_firefox as stage_final
 ARG ARG_FEATURES_USER_GROUP_OVERRIDE
 ARG ARG_HEADLESS_USER_NAME
 ARG ARG_SUDO_PW
@@ -267,15 +242,10 @@ RUN \
     && ${ARG_FEATURES_USER_GROUP_OVERRIDE/*/chmod a+w /etc/passwd /etc/group} \
     && ln -s "${HOME}"/readme.md "${HOME}"/Desktop/README \
     && chmod 755 -R "${STARTUPDIR}" \
-    && "${STARTUPDIR}"/set_user_permissions.sh "${STARTUPDIR}" "${HOME}" \
-	&& chmod 777 /etc/init.d/networking \
-	&& useradd -u 1000 -d /home/student -m -s /bin/bash student \
-    && echo "student:tn3duts" | chpasswd \
-	&& adduser student sudo \
-	&& useradd -u 1002 -d /home/tom -m -s /bin/bash tom \
-    && echo "tom:tom" | chpasswd
+    && "${STARTUPDIR}"/set_user_permissions.sh "${STARTUPDIR}" "${HOME}" 
 
 USER 1001
+
 ENTRYPOINT [ "/usr/bin/tini", "--", "/dockerstartup/startup.sh" ]
 
 
