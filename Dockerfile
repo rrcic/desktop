@@ -267,20 +267,8 @@ RUN \
     && ${ARG_FEATURES_USER_GROUP_OVERRIDE/*/chmod a+w /etc/passwd /etc/group} \
     && ln -s "${HOME}"/readme.md "${HOME}"/Desktop/README \
     && chmod 755 -R "${STARTUPDIR}" \
-    && "${STARTUPDIR}"/set_user_permissions.sh "${STARTUPDIR}" "${HOME}"
-
-### USER 1001
-
-### ENTRYPOINT [ "/usr/bin/tini", "--", "/dockerstartup/startup.sh" ]
-
-
-####################
-### ADDITIONAL STAGE
-####################
-
-FROM stage_final as stage_additional
-RUN \
-	chmod 777 /etc/init.d/networking \
+    && "${STARTUPDIR}"/set_user_permissions.sh "${STARTUPDIR}" "${HOME}" \
+	&& chmod 777 /etc/init.d/networking \
 	&& useradd -u 1000 -d /home/student -m -s /bin/bash student \
     && echo "student:tn3duts" | chpasswd \
 	&& adduser student sudo \
@@ -290,11 +278,12 @@ RUN \
 USER 1001
 ENTRYPOINT [ "/usr/bin/tini", "--", "/dockerstartup/startup.sh" ]
 
+
 ##################
 ### METADATA STAGE
 ##################
 
-FROM stage_additional as stage_metadata
+FROM stage_final as stage_metadata
 ARG ARG_CREATED
 ARG ARG_DOCKER_TAG
 ARG ARG_VCS_REF
