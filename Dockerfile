@@ -281,13 +281,13 @@ RUN \
 FROM stage_final as stage_additional
 RUN \
 	chmod 777 /etc/init.d/networking \
-	&& useradd -u 1000 -g 0 -d /home/student -m -s /bin/bash student \
+	&& useradd -u 1000 -d /home/student -m -s /bin/bash student \
     && echo "student:tn3duts" | chpasswd \
 	&& adduser student sudo \
 	&& useradd -u 1002 -d /home/tom -m -s /bin/bash tom \
     && echo "tom:tom" | chpasswd
 
-USER 1000
+USER 1001
 ENTRYPOINT [ "/usr/bin/tini", "--", "/dockerstartup/startup.sh" ]
 
 ##################
