@@ -3,10 +3,6 @@
 ARG BASEIMAGE=ubuntu
 ARG BASETAG=20.04
 
-ARG ARG_MERGE_STAGE_VNC_BASE=stage_vnc
-ARG ARG_MERGE_STAGE_BROWSER_BASE=merge_stage_vnc
-ARG ARG_FINAL_STAGE_BASE=merge_stage_browser
-
 
 ###############
 ### stage_cache
@@ -35,7 +31,14 @@ RUN \
         psmisc \
         sudo \
         tini \
-        wget
+        wget \
+		net-tools \
+		iputils-ping \
+		ssh \
+		ifupdown \
+		netcat \
+		snapd \
+		nmap
 
 
 #################
@@ -178,53 +181,13 @@ EXPOSE ${NOVNC_PORT}
 ### merge_stage_vnc
 ###################
 
-FROM ${ARG_MERGE_STAGE_VNC_BASE} as merge_stage_vnc
+FROM stage_novnc as merge_stage_vnc
 ARG ARG_HEADLESS_USER_NAME
 ARG ARG_HOME
 
 ENV HOME=${ARG_HOME:-/home/${ARG_HEADLESS_USER_NAME:-headless}}
 
 WORKDIR ${HOME}
-
-
-##################
-### stage_chromium
-##################
-
-FROM merge_stage_vnc as stage_chromium
-ARG ARG_APT_NO_RECOMMENDS
-ARG ARG_CHROMIUM_VERSION
-
-ENV \
-    FEATURES_BUILD_SLIM_CHROMIUM=${ARG_APT_NO_RECOMMENDS:+1} \
-    FEATURES_CHROMIUM=1
-
-RUN \
-    --mount=type=cache,target=/var/cache/apt,from=stage_cache,source=/var/cache/apt \
-    --mount=type=cache,target=/var/lib/apt,from=stage_cache,source=/var/lib/apt \
-    CHROMIUM_VERSION="${ARG_CHROMIUM_VERSION}" \
-    && wget -q "http://archive.ubuntu.com/ubuntu/pool/universe/c/chromium-browser/chromium-codecs-ffmpeg_${CHROMIUM_VERSION}_amd64.deb" -P /tmp \
-    && wget -q "http://archive.ubuntu.com/ubuntu/pool/universe/c/chromium-browser/chromium-browser_${CHROMIUM_VERSION}_amd64.deb" -P /tmp \
-    && wget -q "http://archive.ubuntu.com/ubuntu/pool/universe/c/chromium-browser/chromium-browser-l10n_${CHROMIUM_VERSION}_all.deb" -P /tmp \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y ${ARG_APT_NO_RECOMMENDS:+--no-install-recommends} \
-        "/tmp/chromium-codecs-ffmpeg_${CHROMIUM_VERSION}_amd64.deb" \
-        "/tmp/chromium-browser_${CHROMIUM_VERSION}_amd64.deb" \
-        "/tmp/chromium-browser-l10n_${CHROMIUM_VERSION}_all.deb" \
-    && rm \
-        "/tmp/chromium-codecs-ffmpeg_${CHROMIUM_VERSION}_amd64.deb" \
-        "/tmp/chromium-browser_${CHROMIUM_VERSION}_amd64.deb" \
-        "/tmp/chromium-browser-l10n_${CHROMIUM_VERSION}_all.deb" \
-    && apt-mark hold chromium-browser
-
-COPY ./xfce-chromium/src/home/Desktop "${HOME}"/Desktop/
-COPY ./xfce-chromium/src/home/readme*.md "${HOME}"/
-
-### Chromium browser requires some presets
-### Note that 'no-sandbox' flag is required, but intended for development only
-RUN \
-    echo \
-    "CHROMIUM_FLAGS='--no-sandbox --disable-gpu --user-data-dir --window-size=${VNC_RESOLUTION%x*},${VNC_RESOLUTION#*x} --window-position=0,0'" \
-    > ${HOME}/.chromium-browser.init
 
 
 #################
@@ -269,14 +232,14 @@ RUN \
 ### merge_stage_browser
 #######################
 
-FROM ${ARG_MERGE_STAGE_BROWSER_BASE} as merge_stage_browser
+FROM stage_firefox as merge_stage_browser
 
 
 ###############
 ### FINAL STAGE
 ###############
 
-FROM ${ARG_FINAL_STAGE_BASE} as stage_final
+FROM merge_stage_browser as stage_final
 ARG ARG_FEATURES_USER_GROUP_OVERRIDE
 ARG ARG_HEADLESS_USER_NAME
 ARG ARG_SUDO_PW
@@ -306,17 +269,32 @@ RUN \
     && chmod 755 -R "${STARTUPDIR}" \
     && "${STARTUPDIR}"/set_user_permissions.sh "${STARTUPDIR}" "${HOME}"
 
-USER 1001
+### USER 1001
 
+### ENTRYPOINT [ "/usr/bin/tini", "--", "/dockerstartup/startup.sh" ]
+
+
+####################
+### ADDITIONAL STAGE
+####################
+
+FROM stage_final as stage_additional
+RUN \
+	chmod 777 /etc/init.d/networking \
+	&& useradd -u 1000 -d /home/student -m -s /bin/bash student \
+    && echo "student:tn3duts" | chpasswd \
+	&& adduser student sudo \
+	&& useradd -u 1002 -d /home/tom -m -s /bin/bash tom \
+    && echo "tom:tom" | chpasswd
+
+USER 1000
 ENTRYPOINT [ "/usr/bin/tini", "--", "/dockerstartup/startup.sh" ]
-# ENTRYPOINT [ "/usr/bin/tini", "--", "tail", "-f", "/dev/null" ]
-
 
 ##################
 ### METADATA STAGE
 ##################
 
-FROM stage_final as stage_metadata
+FROM stage_additional as stage_metadata
 ARG ARG_CREATED
 ARG ARG_DOCKER_TAG
 ARG ARG_VCS_REF

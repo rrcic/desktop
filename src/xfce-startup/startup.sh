@@ -60,25 +60,25 @@ main() {
     ### option "--debug"
     if [ "${_arg_debug}" == "on" ] ; then
         echo "Script: $0"
-        echo "\${HOME}=${HOME}"
+        echo "\${HEADLESS_HOME}=${HEADLESS_HOME}"
 
         echo "ls -la /" ; ls -la /
         echo "ls -ls /etc/passwd /etc/group" ; ls -ls /etc/passwd /etc/group
         echo "ls -la /home" ; ls -la /home
-        echo "ls -la ${HOME}" ; ls -la "${HOME}"
+        echo "ls -la ${HEADLESS_HOME}" ; ls -la "${HEADLESS_HOME}"
         echo "ls -la ." ; ls -la .
     fi
 
     ### create container user
-    generate_container_user
+    ###generate_container_user
 
-    if [ "$?" != "0" ] ; then
-        echo "ERROR: Unable to generate the container user '$(id -u):$(id -g)'."
-        if [ $(id -g) -ne 0 ] ; then
-            echo -e "HINT: You have overriden also the user's group ID. Be sure to use an image \nthat has been built with the build argument ARG_FEATURES_USER_GROUP_OVERRIDE."
-        fi
-        cleanup
-    fi
+    ###if [ "$?" != "0" ] ; then
+    ###    echo "ERROR: Unable to generate the container user '$(id -u):$(id -g)'."
+    ###    if [ $(id -g) -ne 0 ] ; then
+    ###        echo -e "HINT: You have overriden also the user's group ID. Be sure to use an image \nthat has been built with the build argument ARG_FEATURES_USER_GROUP_OVERRIDE."
+    ###    fi
+    ###    cleanup
+    ###fi
 
     ### options '--version-sticker' and '--version-sticker-verbose'
     if [ "${_arg_version_sticker}" == "on" ] || [ "${_arg_version_sticker_verbose}" == "on" ] ; then
